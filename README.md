@@ -1,1 +1,1 @@
-# Infotact---Data-Analytics
+# Infotact-Analytics
