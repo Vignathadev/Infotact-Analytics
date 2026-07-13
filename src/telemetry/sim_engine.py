@@ -6,9 +6,10 @@ Phase 1 - Enterprise Object-Oriented Infrastructure and Refactoring.
 import logging
 from typing import NamedTuple
 import random
-import time 
+import time
 import json
 import os
+
 # 1. Standard Production Logging Setup
 logging.basicConfig(
     level=logging.INFO,
@@ -42,7 +43,6 @@ class ClimateSimulationEngine:
         try:
             logger.info("Verifying infrastructure configuration constraints...")
             
-            # Simple boundary validation metrics
             if not self.config.target_location:
                 raise ValueError("Target location identifier cannot be empty.")
             if not (0 <= self.config.base_humidity <= 100):
@@ -58,41 +58,37 @@ class ClimateSimulationEngine:
             self.sim_error_count += 1
             logger.error(f"Engine baseline initialization structural collapse: {str(err)}")
             self.is_engine_active = False
-            return False 
+            return False
 
-           def generate_sensor_data(self) -> dict:
-     """Generate mock IoT sensor telemetry with random variance."""
-     if not self.is_engine_active:
-         logger.warning("Engine offline. Cannot generate telemetry.")
-         return {}
+    def generate_sensor_data(self) -> dict:
+        """Generate mock IoT sensor telemetry with random variance."""
+        if not self.is_engine_active:
+            logger.warning("Engine offline. Cannot generate telemetry.")
+            return {}
+            
+        current_temp = self.config.base_temperature + random.uniform(-0.5, 0.5)
+        current_humidity = self.config.base_humidity + random.uniform(-2.0, 2.0)
+        
+        payload = {
+            "location": self.config.target_location,
+            "temperature_c": round(current_temp, 2),
+            "humidity_pct": round(current_humidity, 2),
+            "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+        }
+        
+        logger.info(f"Generated Telemetry Payload: {payload}")
+        return payload
 
-     # Adding slight random fluctuations to base values
-            current_temp = self.config.base_temperature + random.uniform(-0.5, 0.5)
-            current_humidity = self.config.base_humidity + random.uniform(-2.0, 2.0)
-
-            # Creating a JSON-like dictionary payload
-            payload = {
-                "location": self.config.target_location,
-                "temperature_c": round(current_temp, 2),
-                "humidity_pct": round(current_humidity, 2),
-                "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
-            }
-
-            logger.info(f"Generated Telemetry Payload: {payload}")
-            return payload 
-
-            def calculate_apparent_temperature(self, telemetry_data: dict) -> float:
+    def calculate_apparent_temperature(self, telemetry_data: dict) -> float:
         """Calculate apparent temperature (feels-like) using arithmetic analytics."""
         if not telemetry_data:
             logger.warning("No telemetry data received for analytics.")
             return 0.0
             
         try:
-            # Extracting raw data from the payload
             temp = telemetry_data.get("temperature_c", 0.0)
             humidity = telemetry_data.get("humidity_pct", 0.0)
             
-            # Simple Arithmetic Formula: Apparent Temp = Temp + (0.33 * Humidity) - 4.0
             apparent_temp = temp + (0.33 * humidity) - 4.0
             
             logger.info(f"Analytics Engine Processed Apparent Temp: {apparent_temp:.2f}°C")
@@ -100,24 +96,20 @@ class ClimateSimulationEngine:
             
         except Exception as e:
             logger.error(f"Analytics processing failed: {str(e)}")
-            return 0.0 
+            return 0.0
 
-
-def export_data_to_storage(self, payload: dict, apparent_temp: float) -> bool:
+    def export_data_to_storage(self, payload: dict, apparent_temp: float) -> bool:
         """Export processed telemetry and analytics to a local JSONL storage file."""
         if not payload:
             return False
             
         try:
-            # 1. Merging raw data and calculated analytics
             final_record = payload.copy()
             final_record["apparent_temperature_c"] = apparent_temp
             
-            # 2. Creating a storage folder if it doesn't exist
             os.makedirs("storage", exist_ok=True)
             file_path = "storage/telemetry_data.jsonl"
             
-            # 3. Enterprise standard: Append to file safely (JSON Lines format)
             with open(file_path, "a") as file:
                 json.dump(final_record, file)
                 file.write("\n")
@@ -129,9 +121,30 @@ def export_data_to_storage(self, payload: dict, apparent_temp: float) -> bool:
             logger.error(f"File IO operation failed: {str(e)}")
             return False
 
+    def run_pipeline(self) -> None:
+        """Execute the continuous real-time telemetry ingestion pipeline."""
+        if not self.is_engine_active:
+            logger.error("Cannot start pipeline. Engine is offline.")
+            return
+
+        logger.info("Starting continuous telemetry pipeline... (Press Ctrl+C to stop)")
+        
+        try:
+            while True:
+                raw_payload = self.generate_sensor_data()
+                apparent_temp = self.calculate_apparent_temperature(raw_payload)
+                self.export_data_to_storage(raw_payload, apparent_temp)
+                time.sleep(self.config.data_interval_sec)
+                
+        except KeyboardInterrupt:
+            logger.info("Pipeline terminated by user. Shutting down safely...")
+            self.is_engine_active = False
+        except Exception as e:
+            logger.critical(f"Critical pipeline failure: {str(e)}")
+            self.is_engine_active = False
+
 # --- Local System Verification Block ---
 if __name__ == "__main__":
-    # Bootstrapping base metrics container safely using type validation rules
     default_config = EngineConfig(
         target_location="Hyderabad_Hub",
         base_temperature=28.5,
@@ -139,6 +152,6 @@ if __name__ == "__main__":
         data_interval_sec=5
     )
     
-    # Executing instance pipeline
     engine = ClimateSimulationEngine(config=default_config)
-    engine.initialize_system()
+    if engine.initialize_system():
+        engine.run_pipeline()
