@@ -5,7 +5,8 @@ Phase 1 - Enterprise Object-Oriented Infrastructure and Refactoring.
 
 import logging
 from typing import NamedTuple
-
+import random
+import time
 # 1. Standard Production Logging Setup
 logging.basicConfig(
     level=logging.INFO,
@@ -55,7 +56,28 @@ class ClimateSimulationEngine:
             self.sim_error_count += 1
             logger.error(f"Engine baseline initialization structural collapse: {str(err)}")
             self.is_engine_active = False
-            return False
+            return False 
+
+           def generate_sensor_data(self) -> dict:
+     """Generate mock IoT sensor telemetry with random variance."""
+     if not self.is_engine_active:
+         logger.warning("Engine offline. Cannot generate telemetry.")
+         return {}
+
+     # Adding slight random fluctuations to base values
+            current_temp = self.config.base_temperature + random.uniform(-0.5, 0.5)
+            current_humidity = self.config.base_humidity + random.uniform(-2.0, 2.0)
+
+            # Creating a JSON-like dictionary payload
+            payload = {
+                "location": self.config.target_location,
+                "temperature_c": round(current_temp, 2),
+                "humidity_pct": round(current_humidity, 2),
+                "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+            }
+
+            logger.info(f"Generated Telemetry Payload: {payload}")
+            return payload
 
 
 # --- Local System Verification Block ---
