@@ -6,7 +6,9 @@ Phase 1 - Enterprise Object-Oriented Infrastructure and Refactoring.
 import logging
 from typing import NamedTuple
 import random
-import time
+import time 
+import json
+import os
 # 1. Standard Production Logging Setup
 logging.basicConfig(
     level=logging.INFO,
@@ -98,8 +100,34 @@ class ClimateSimulationEngine:
             
         except Exception as e:
             logger.error(f"Analytics processing failed: {str(e)}")
-            return 0.0
+            return 0.0 
 
+
+def export_data_to_storage(self, payload: dict, apparent_temp: float) -> bool:
+        """Export processed telemetry and analytics to a local JSONL storage file."""
+        if not payload:
+            return False
+            
+        try:
+            # 1. Merging raw data and calculated analytics
+            final_record = payload.copy()
+            final_record["apparent_temperature_c"] = apparent_temp
+            
+            # 2. Creating a storage folder if it doesn't exist
+            os.makedirs("storage", exist_ok=True)
+            file_path = "storage/telemetry_data.jsonl"
+            
+            # 3. Enterprise standard: Append to file safely (JSON Lines format)
+            with open(file_path, "a") as file:
+                json.dump(final_record, file)
+                file.write("\n")
+                
+            logger.info(f"Successfully exported record to {file_path}")
+            return True
+            
+        except Exception as e:
+            logger.error(f"File IO operation failed: {str(e)}")
+            return False
 
 # --- Local System Verification Block ---
 if __name__ == "__main__":
