@@ -77,7 +77,28 @@ class ClimateSimulationEngine:
             }
 
             logger.info(f"Generated Telemetry Payload: {payload}")
-            return payload
+            return payload 
+
+            def calculate_apparent_temperature(self, telemetry_data: dict) -> float:
+        """Calculate apparent temperature (feels-like) using arithmetic analytics."""
+        if not telemetry_data:
+            logger.warning("No telemetry data received for analytics.")
+            return 0.0
+            
+        try:
+            # Extracting raw data from the payload
+            temp = telemetry_data.get("temperature_c", 0.0)
+            humidity = telemetry_data.get("humidity_pct", 0.0)
+            
+            # Simple Arithmetic Formula: Apparent Temp = Temp + (0.33 * Humidity) - 4.0
+            apparent_temp = temp + (0.33 * humidity) - 4.0
+            
+            logger.info(f"Analytics Engine Processed Apparent Temp: {apparent_temp:.2f}°C")
+            return round(apparent_temp, 2)
+            
+        except Exception as e:
+            logger.error(f"Analytics processing failed: {str(e)}")
+            return 0.0
 
 
 # --- Local System Verification Block ---
