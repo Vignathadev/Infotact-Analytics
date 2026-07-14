@@ -111,7 +111,7 @@ class ClimateSimulationEngine:
             file_path = "storage/telemetry_data.jsonl"
             
             with open(file_path, "a") as file:
-                json.dump(final_record, file)
+                json.dump(final_record, file, separators=(',', ':'))
                 file.write("\n")
                 
             logger.info(f"Successfully exported record to {file_path}")
